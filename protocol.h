@@ -43,8 +43,10 @@
 #define S_INIT 0
 #define S_HELO 1
 #define S_MAIL 2
-#define S_DATA 3
-#define S_QUIT 4
+#define S_RCPT 3
+#define S_DATA 4
+#define S_WRITE 5
+#define S_QUIT 6
 
 
 //PUERTO DEL SERVICIO
