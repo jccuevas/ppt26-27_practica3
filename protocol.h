@@ -26,7 +26,7 @@
 
 // COMANDOS DE APLICACION
 #define HELO "HELO"
-#define PASS "PASS"
+#define MAIL "MAIL FROM:"
 #define QUIT "QUIT"
 #define ECHO "ECHO"
 #define ROOM "ROOM" //Comando creado para Tarea 4
