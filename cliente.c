@@ -221,6 +221,8 @@ int main(int* argc, char* argv[])
 									status = S_MAIL;
 								}
 								break;
+							case S_MAIL:
+								break;
 							
 						}
 						
