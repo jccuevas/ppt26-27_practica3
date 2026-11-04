@@ -148,38 +148,31 @@ int main(int* argc, char* argv[])
 							status = S_QUIT;
 						}
 						else
-							sprintf_s(buffer_out, sizeof(buffer_out), "%s %s%s", PASS, input, CRLF);
+							sprintf_s(buffer_out, sizeof(buffer_out), "%s %s%s", MAIL, input, CRLF);
 						break;
-					case S_DATA:
-						printf("Estancias disponibles:\r\n-Sala de juntas (cw00).\r\n-Sala coworking grande norte(cw01).\r\n- Sala coworking grande sur(cw02).\r\n- Sala coworking junior(cw03).\r\n");	
-						printf("CLIENTE> Introduzca código de estancia (enter para salir): ");
-						gets_s(input, sizeof(input));
-						if (strlen(input) == 0) {
-							sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", QUIT, CRLF);
-							status = S_QUIT;
-						}
-						else {
-							char day[16] = "1";
-							char month[16] = "1";
-							unsigned int dayint = 0; // Alternativa a hacerlo con cadenas o para coprobar valores
-							unsigned int monthint = 1; // Alternativa a hacerlo con cadenas o para coprobar valores
-							// strlen strcmp
-							// scanf("%d",&dayint);
-							// if(dayint<1 && dayint>31)
-							// dayint = atoi(day)
+						case S_DATA: 
+							printf("CLIENTE> Introduzca su mensaje (enter para salir): ");
+							gets_s(input, sizeof(input));
+							
+							if (strlen(input) == 0) {
+								sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", QUIT, CRLF);
+								status = S_QUIT;
+							}
+							else {
+								char day[16] = "1";
+								char month[16] = "1";
+								unsigned int dayint = 0; // Alternativa a hacerlo con cadenas o para coprobar valores
+								unsigned int monthint = 1; // Alternativa a hacerlo con cadenas o para coprobar valores
+								char subject[64] = "";
+								printf("CLIENTE> Introduzca el asunto: ");
+								gets_s(input, sizeof(input));
 
-							// Validar sala
-							//cambio
-
-							// Validar día
-
-							// Validar mes
-
-							// Generar mensaje ROOM = "ROOM" SP CODE SP DAY SP MONTH CRLF; Reserva 
-							sprintf_s(buffer_out, sizeof(buffer_out), "%s %s %s %s %s", ROOM, input, day, month, CRLF);
-							//sprintf_s(buffer_out, sizeof(buffer_out), "%s %s %u %d %s", ROOM, input, dayint, monthint, CRLF);
-						}
-						break;
+								// Generar un correo de un solo mensaje "subject:asuntoCRLFCRLF mensaje CRLF.CRLF"
+								sprintf_s(buffer_out, sizeof(buffer_out), "subject:%s%s%s%s%s.%s", subject, CRLF, CRLF, input, CRLF, CRLF);
+								
+							}
+							break;
+						
 					}
 
 					if (status != S_INIT) {
@@ -191,7 +184,7 @@ int main(int* argc, char* argv[])
 						}
 					}
 
-					received = recv(sockfd, buffer_in, 512, 0);
+					received = recv(sockfd, buffer_in, 512, 0);// 250 fsdgfs CRLF
 					if (received <= 0) {
 						DWORD error = GetLastError();
 						if (received < 0) {
@@ -222,6 +215,17 @@ int main(int* argc, char* argv[])
 								}
 								break;
 							case S_MAIL:
+								break;
+							case S_RCPT:
+								/*
+								IF (OK) 
+								  IF (OTRO?)
+									status = S_RCPT;
+								  ELSE
+									status = S_DATA;
+								ELSE
+								  status = S_RCPT;
+								*/
 								break;
 							
 						}
