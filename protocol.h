@@ -27,6 +27,7 @@
 // COMANDOS DE APLICACION
 #define HELO "HELO"
 #define MAIL "MAIL FROM:"
+#define DATA "DATA"
 #define QUIT "QUIT"
 #define ECHO "ECHO"
 #define ROOM "ROOM" //Comando creado para Tarea 4
@@ -35,6 +36,8 @@
 // RESPUESTAS A COMANDOS DE APLICACION
 #define ST220  "220"
 #define ST250  "250"
+#define ST354  "354"
+#define ST221  "221"
 
 //FIN DE RESPUESTA
 #define CRLF "\r\n"
@@ -47,6 +50,8 @@
 #define S_DATA 4
 #define S_WRITE 5
 #define S_QUIT 6
+#define S_EXIT 7
+#define S_RESET 10
 
 
 //PUERTO DEL SERVICIO

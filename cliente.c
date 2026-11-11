@@ -44,6 +44,8 @@ int main(int* argc, char* argv[])
 	char ipdest[256];
 	char default_ip4[16] = "127.0.0.1";
 	char default_ip6[64] = "::1";
+	int headers = 0;
+	int sending = 0;
 
 	WORD wVersionRequested;
 	WSADATA wsaData;
@@ -134,13 +136,13 @@ int main(int* argc, char* argv[])
 						gets_s(input, sizeof(input));
 						if (strlen(input) == 0) {
 							sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", QUIT, CRLF);
-							status = S_QUIT;
+							//status = S_QUIT;
 						}
 						else {
 							sprintf_s(buffer_out, sizeof(buffer_out), "%s %s%s", HELO, input, CRLF);
 						}
 						break;
-						case S_MAIL:
+					case S_MAIL:
 						printf("CLIENTE> Introduzca la clave (enter para salir): ");
 						gets_s(input, sizeof(input));
 						if (strlen(input) == 0) {
@@ -150,60 +152,88 @@ int main(int* argc, char* argv[])
 						else
 							sprintf_s(buffer_out, sizeof(buffer_out), "%s %s%s", MAIL, input, CRLF);
 						break;
-						case S_DATA: 
-							printf("CLIENTE> Introduzca su mensaje (enter para salir): ");
-							gets_s(input, sizeof(input));
-							
-							if (strlen(input) == 0) {
-								sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", QUIT, CRLF);
-								status = S_QUIT;
-							}
-							else {
-								char day[16] = "1";
-								char month[16] = "1";
-								unsigned int dayint = 0; // Alternativa a hacerlo con cadenas o para coprobar valores
-								unsigned int monthint = 1; // Alternativa a hacerlo con cadenas o para coprobar valores
-								char subject[64] = "";
-								printf("CLIENTE> Introduzca el asunto: ");
-								gets_s(input, sizeof(input));
+					case S_DATA:
+						sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", DATA, CRLF);
+						break;
+					case S_WRITE:
+						sending = 1;
+			
 
-								// Generar un correo de un solo mensaje "subject:asuntoCRLFCRLF mensaje CRLF.CRLF"
-								sprintf_s(buffer_out, sizeof(buffer_out), "subject:%s%s%s%s%s.%s", subject, CRLF, CRLF, input, CRLF, CRLF);
-								
-							}
-							break;
+						if (headers == 0) {
+							char subject[1024] = "";
+							char to[1024] = "";
+							char from[1024] = "";
+						printf("CLIENTE> Introduzca el asunto: ");
+						gets_s(subject, sizeof(subject));
+						//Comprobar el tamaño máximo de la línea
+						printf("CLIENTE> Introduzca el nombre del remitente: ");
+						gets_s(from, sizeof(from));
+						//Comprobar el tamaño máximo de la línea
+						printf("CLIENTE> Introduzca el nombre del destinatario: ");
+						gets_s(to, sizeof(to));
+						//Comprobar el tamaño máximo de la línea
+
+						sprintf_s(buffer_out, sizeof(buffer_out), "subject:%s%s%s", subject, CRLF,/*FALTAN TO Y FROM*/ CRLF/*CRLF DE FIN DE CABECERAS*/);
+						headers = 1;
+						}
+						else {
+							
+							printf("CLIENTE> Introduzca su mensaje (Escriba un punto en una línea sola para terminar): ");
+							//PEdir líneas del correo
+							gets_s(input, sizeof(input));
+							//Comprobar el tamaño máximo de la línea
+							sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", input, CRLF);
+							//Comprobar si es el final del mensaje (el punto)
+							/*
+							IF (fin de mensaje? El punto solo)
+							  sending = 0;
+							  
+							*/
 						
+						}
+						// Generar un correo de un solo mensaje "subject:asuntoCRLFCRLF mensaje CRLF.CRLF"
+						//sprintf_s(buffer_out, sizeof(buffer_out), "subject:%s%s%s%s%s.%s", subject, CRLF, CRLF, input, CRLF, CRLF);
+
+					
+					break;
+					case S_RESET:
+						//Envío el comando RSET para reiniciar la sesión
+						break;
+					case S_QUIT:
+						sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", QUIT, CRLF);
+						break;
+
 					}
 
 					if (status != S_INIT) {
 						sent = send(sockfd, buffer_out, (int)strlen(buffer_out), 0);
 						if (sent == SOCKET_ERROR) {
-							status = S_QUIT;
+							status = S_EXIT;
 							continue;// La sentencia continue hace que la ejecución dentro de un
-									 // bucle salte hasta la comprobación del mismo.
+							// bucle salte hasta la comprobación del mismo.
 						}
 					}
-
-					received = recv(sockfd, buffer_in, 512, 0);// 250 fsdgfs CRLF
-					if (received <= 0) {
-						DWORD error = GetLastError();
-						if (received < 0) {
-							printf("CLIENTE> Error %d en la recepción de datos\r\n", error);
-							status = S_QUIT;
+					if (sending==0) {//Hasta que se envíe el punto y final no puede recibir
+						received = recv(sockfd, buffer_in, 512, 0);// 250 fsdgfs CRLF
+						if (received <= 0) {
+							DWORD error = GetLastError();
+							if (received < 0) {
+								printf("CLIENTE> Error %d en la recepción de datos\r\n", error);
+								status = S_EXIT;
+							}
+							else {
+								printf("CLIENTE> Conexión con el servidor cerrada\r\n");
+								status = S_EXIT;
+							}
 						}
 						else {
-							printf("CLIENTE> Conexión con el servidor cerrada\r\n");
-							status = S_QUIT;
-						}
-					}
-					else {
-						// A B C 0x00
-						// 0 1 2 3
-						//buffer_in= "ABC0sdklfjñalsdfkjañsldkfjañsdlfkjañsl"
-						buffer_in[received] = 0x00;
-						printf(buffer_in);
-						// Motor de transición de estados
-						switch (status) {
+							// A B C 0x00
+							// 0 1 2 3
+							//buffer_in= "ABC0sdklfjñalsdfkjañsldkfjañsdlfkjañsl"
+							buffer_in[received] = 0x00;
+							printf(buffer_in);
+							// Motor de transición de estados
+							switch (status) {
 							case S_INIT:
 								if (strncmp(buffer_in, ST220, 3) == 0) {
 									status = S_HELO;
@@ -218,21 +248,48 @@ int main(int* argc, char* argv[])
 								break;
 							case S_RCPT:
 								/*
-								IF (OK) 
+								IF (OK)
 								  IF (OTRO?)
 									status = S_RCPT;
 								  ELSE
-									status = S_DATA;
+									** TAREA 4 **
+									IF (DATOS CORRECTOS?)
+									  status = S_DATA;
+									ELSE
+									  status = S_RESET;//Para enviar el RESET
 								ELSE
 								  status = S_RCPT;
 								*/
 								break;
-							
-						}
-						
-					}
+							case S_DATA:
+								if (strncmp(buffer_in, ST354, 3) == 0) {
+									status = S_WRITE;
+								}
+								else {
+									status = S_QUIT;
+								}
+								break;
+							case S_WRITE:
+								headers = 0;
+								sending = 0;
+								status = S_MAIL;
+								break;
+							case S_RESET:
+								if (strncmp(buffer_in, ST250, 3) == 0) {
+									status = S_MAIL;
+								}//Comprobar la RFC para el error y si hay error salir del progama, por ejemplo enviando QUIT
+								break;
+							case S_QUIT:
+								//if (strncmp(buffer_in, ST221, 3) == 0) {
+								status = S_EXIT;
+								//}//Controlar el error
+								break;
 
-				} while (status != S_QUIT);
+							}
+
+						}
+					}
+				} while (status != S_EXIT);
 			}
 			else {
 				int error_code = GetLastError();
