@@ -29,9 +29,7 @@
 #define MAIL "MAIL FROM:"
 #define DATA "DATA"
 #define QUIT "QUIT"
-#define ECHO "ECHO"
-#define ROOM "ROOM" //Comando creado para Tarea 4
-
+#define RSET "RSET"
 
 // RESPUESTAS A COMANDOS DE APLICACION
 #define ST220  "220"

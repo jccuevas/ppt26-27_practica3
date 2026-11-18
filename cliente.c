@@ -158,28 +158,34 @@ int main(int* argc, char* argv[])
 					case S_WRITE:
 						sending = 1;
 			
-
+						//TAREA 4. La variable headers nos controla los dos subestados en el envío del correo.
 						if (headers == 0) {
 							char subject[1024] = "";
 							char to[1024] = "";
 							char from[1024] = "";
-						printf("CLIENTE> Introduzca el asunto: ");
-						gets_s(subject, sizeof(subject));
-						//Comprobar el tamaño máximo de la línea
-						printf("CLIENTE> Introduzca el nombre del remitente: ");
-						gets_s(from, sizeof(from));
-						//Comprobar el tamaño máximo de la línea
-						printf("CLIENTE> Introduzca el nombre del destinatario: ");
-						gets_s(to, sizeof(to));
-						//Comprobar el tamaño máximo de la línea
+							do {
+								printf("CLIENTE> Introduzca el asunto: ");
+								gets_s(subject, sizeof(subject));
+								if (strlen(subject) > 998) {
+									printf("CLIENTE> El asunto es demasiado largo. Inténtelo de nuevo.\r\n");
+								}
+							} while (strlen(subject) > 998);
+							//TAREA 4.Comprobar el tamaño máximo de la línea
+							printf("CLIENTE> Introduzca el nombre del remitente: ");
+							gets_s(from, sizeof(from));
+							//TAREA 4.Comprobar el tamaño máximo de la línea
+							printf("CLIENTE> Introduzca el nombre del destinatario: ");
+							gets_s(to, sizeof(to));
+							//TAREA 4.Comprobar el tamaño máximo de la línea
 
-						sprintf_s(buffer_out, sizeof(buffer_out), "subject:%s%s%s", subject, CRLF,/*FALTAN TO Y FROM*/ CRLF/*CRLF DE FIN DE CABECERAS*/);
-						headers = 1;
-						}
-						else {
-							
+							//TAREA 4.ROBUSTEZ: Comprobar lo introducido por el usuario y si es demasiado largo, pedirlo de nuevo
+							//TAREA 4.ROBUSTEZ: buffer_out no puede desbordarse, por lo que su tamaño debe ser suficiente para contener el mensaje completo, incluyendo los CRLF y el CRLF de fin de cabeceras. 
+							//TAREA 4.RECORDATORIO: no están incluidas en el código el soporte al envío de TO y FROM.
+							sprintf_s(buffer_out, sizeof(buffer_out), "subject:%s%s%s", subject, CRLF,/*FALTAN TO Y FROM*/ CRLF/*CRLF DE FIN DE CABECERAS*/);
+							headers = 1;
+						} else {
 							printf("CLIENTE> Introduzca su mensaje (Escriba un punto en una línea sola para terminar): ");
-							//PEdir líneas del correo
+							//Pedir líneas del correo
 							gets_s(input, sizeof(input));
 							//Comprobar el tamaño máximo de la línea
 							sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", input, CRLF);
@@ -189,6 +195,13 @@ int main(int* argc, char* argv[])
 							  sending = 0;
 							  
 							*/
+							if(strcmp(input,"."==0)){
+								//fin del correo
+								sending = 0;//volvemos a recibir del servidor
+							}
+
+							/* SUGERENCIA OPCIONAL: desambiguar el punto al principio de la línea, si el usuario escribe un punto al principio de la línea, se debe enviar un punto adicional para que el servidor no lo interprete como el final del mensaje. Esto se hace añadiendo un punto adicional al principio de la línea si la línea comienza con un punto.
+							*/
 						
 						}
 						// Generar un correo de un solo mensaje "subject:asuntoCRLFCRLF mensaje CRLF.CRLF"
@@ -197,7 +210,8 @@ int main(int* argc, char* argv[])
 					
 					break;
 					case S_RESET:
-						//Envío el comando RSET para reiniciar la sesión
+						//TAREA 4.Envío el comando RSET para reiniciar la sesión
+						sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", RSET, CRLF);
 						break;
 					case S_QUIT:
 						sprintf_s(buffer_out, sizeof(buffer_out), "%s%s", QUIT, CRLF);
@@ -213,6 +227,7 @@ int main(int* argc, char* argv[])
 							// bucle salte hasta la comprobación del mismo.
 						}
 					}
+					//TAREA 4. La variable sending evita enviar cuando estamos escribiendo el mensaje (cabeceras o cuerpo)
 					if (sending==0) {//Hasta que se envíe el punto y final no puede recibir
 						received = recv(sockfd, buffer_in, 512, 0);// 250 fsdgfs CRLF
 						if (received <= 0) {
@@ -270,9 +285,18 @@ int main(int* argc, char* argv[])
 								}
 								break;
 							case S_WRITE:
+								//TAREA 4. comprobar la respuesta del servidor
 								headers = 0;
-								sending = 0;
-								status = S_MAIL;
+								//sending = 0;
+								printf("¿Quiere enviar otro correo? (S para otro o cualquier tecla para salir): ");
+								option = _getche();
+								//TAREA 4. Comprobar si el usuario quiere enviar otro correo o salir del programa.
+								if (option == 's' || option == 'S') {
+									status = S_MAIL;
+								}
+								else {
+									status = S_QUIT;
+								}
 								break;
 							case S_RESET:
 								if (strncmp(buffer_in, ST250, 3) == 0) {
